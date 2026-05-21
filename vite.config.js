@@ -16,7 +16,8 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 export default defineConfig({
+  // تأكد أن هذا الاسم هو نفس اسم الـ Repository بتاعك على GitHub
+  // إذا كان اسم الريبو هو IndusConnect- (بما فيه الشرطة)، اكتبه كما هو
+  base: '/IndusConnect-/', 
   plugins: [react()],
-  // استبدل 'indo' باسم المستودع بتاعك على جيت هب بالظبط لو كان مختلف
-  base: '/indo/', 
 })

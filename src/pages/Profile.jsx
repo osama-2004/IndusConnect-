@@ -8,6 +8,8 @@ import './Profile.css'
 // الـ Wishlist هتقرأ منه ديناميكياً بناءً على القلوب اللي المستخدم هيضغط عليها
 // ==========================================
 const allProductsCatalog = [
+  // ... باقي البيانات
+
   { id: 1, name: 'Solid Shelf Table', price: 1000, category: 'Furniture', rating: 5, reviews: 300, image: 'cat_furniture_shelf.png', description: 'Sleek wooden table with a functional shelf.', viewedCount: '200+', moq: '12pcs', unitPrice: '1000EGP' },
   { id: 2, name: 'Tinted Glass Lights', price: 700, category: 'Furniture', rating: 4.5, reviews: 120, image: 'product_amber_pendant.png', description: 'Beautiful tinted glass pendant lights for modern homes.', viewedCount: '150+', moq: '6pcs', unitPrice: '700EGP' },
   { id: 3, name: 'Cardboard Boxes', price: 10, category: 'Package', rating: 4, reviews: 80, image: 'product_agri_equipment.png', description: 'Heavy-duty cardboard boxes for industrial packaging.', viewedCount: '300+', moq: '500pcs', unitPrice: '10EGP' },
