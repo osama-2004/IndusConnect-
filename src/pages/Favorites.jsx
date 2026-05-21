@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useFavorites, useCart } from '../App'; // 🛠️ تم إضافة useCart هنا
 import { DEFAULT_PRODUCTS } from './Services'; 
-import './Favorites.css'; 
+import './favorites.css'; 
 
 export default function Favorites() {
   const { favorites, toggleFavorite } = useFavorites();
