@@ -1,0 +1,86 @@
+
+.favorites-page-container {
+  width: 100%;
+  min-height: 100vh;
+  background-color: #f8f9fa;
+  font-family: system-ui, -apple-system, sans-serif;
+  padding-top: 40px;
+  padding-bottom: 60px;
+  margin-top: 150px; 
+}
+
+.favorites-container {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.favorites-header {
+  margin-bottom: 30px;
+  border-bottom: 1px solid #eef0f2;
+  padding-bottom: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.favorites-header h1 {
+  font-size: 2rem;
+  color: #1f1f1f;
+  font-weight: 700;
+  margin: 0;
+}
+
+.favorites-header p {
+  color: #8c8c8c;
+  margin-top: 5px;
+  margin: 0;
+}
+
+.favorites-empty-state {
+  text-align: center;
+  padding: 80px 20px;
+}
+
+.favorites-empty-icon {
+  font-size: 4rem;
+  margin-bottom: 20px;
+}
+
+.favorites-empty-state h3 {
+  color: #262626;
+  margin-bottom: 10px;
+  font-size: 1.5rem;
+}
+
+.favorites-empty-state p {
+  color: #8c8c8c;
+  margin-bottom: 25px;
+}
+
+
+.favorites-btn {
+  background-color: #002329;
+  color: #ffffff;
+  padding: 10px 20px;
+  font-weight: 600;
+  border-radius: 6px;
+  text-decoration: none;
+  display: inline-block;
+  transition: opacity 0.2s ease;
+  cursor: pointer;
+}
+
+.favorites-btn:hover {
+  opacity: 0.9;
+}
+
+.favorites-btn-accent {
+  background-color: #ff4d4f;
+}
+
+.favorites-page-container .circle-icon.fav-icon-btn {
+  background-color: #fff0f6;
+  border-color: #ffadd2;
+  transform: scale(1.05);
+}

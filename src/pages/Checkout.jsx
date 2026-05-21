@@ -1,149 +1,180 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import './Checkout.css'
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import './Checkout.css';
 
 export default function Checkout() {
-  const navigate = useNavigate()
-  const [step, setStep] = useState(1)
-  const [form, setForm] = useState({
-    firstName: '', lastName: '', email: '', phone: '',
-    address: '', city: '', country: '', zip: '',
-    cardNum: '', cardName: '', expiry: '', cvv: ''
-  })
+  const navigate = useNavigate();
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [selectedReceiver, setSelectedReceiver] = useState('osama');
+  const [paymentMethod, setPaymentMethod] = useState('cash');
 
-  const handleOrder = (e) => {
-    e.preventDefault()
-    setStep(3)
-  }
+  // 🛠️ FIX: قراءة البيانات مباشرة من نفس المفتاح 'cart' لضمان التطابق الكامل
+  const [cartItems, setCartItems] = useState(() => {
+    const saved = localStorage.getItem('cart');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // ==========================================
+  // العمليات الحسابية الديناميكية المربوطة بالسلة
+  // ==========================================
+  const subtotal = cartItems.reduce((s, it) => s + (Number(it.price) || 0) * (Number(it.quantity) || 0), 0);
+  const shipping = cartItems.length > 0 ? 45 : 0; // نفس قيمة الشحن في صفحة السلة
+  const tax = Math.round(subtotal * 0.05);       // ضريبة 5%
+  const total = subtotal + shipping + tax;
+
+  // دالة إتمام الطلب وتفريغ السلة بعد النجاح
+  const handleConfirmOrder = () => {
+    setShowSuccess(true);
+    localStorage.removeItem('cart'); // مسح السلة من الـ localStorage بعد تأكيد الأوردر
+    window.dispatchEvent(new Event('cartUpdated')); // تنبيه باقي الموقع أن السلة فضيت
+  };
 
   return (
-    <div className="checkout-page page-enter">
-      <div className="checkout-inner">
-        <h1 className="checkout-title" id="checkout-heading">Checkout</h1>
+    <div className="checkout-wrapper">
+      
+      <div className={`checkout-container ${showSuccess ? 'content-blur' : ''}`}>
+        <h1 className="main-title">Checkout</h1>
 
-        {/* Steps */}
-        <div className="checkout-steps" id="checkout-steps">
-          {['Shipping', 'Payment', 'Confirmation'].map((s, i) => (
-            <div key={i} className={`checkout-step ${step >= i+1 ? 'active' : ''} ${step > i+1 ? 'done' : ''}`} id={`step-${i+1}`}>
-              <div className="step-circle">{step > i+1 ? '✓' : i+1}</div>
-              <span>{s}</span>
+        <div className="checkout-content">
+       
+          <div className="checkout-form">
+            
+            {/* قسم العنوان */}
+            <section className="form-section">
+              <h2 className="section-heading">Address</h2>
+              <div className="address-input-wrapper">
+                <span className="location-icon">📍</span>
+                <input type="text" placeholder="e.g., Cairo - Giza, Egypt" />
+              </div>
+            </section>
+
+            {/* قسم المستلم */}
+            <section className="form-section">
+              <h2 className="section-heading">Who will receive this order?</h2>
+              <div className="receiver-grid">
+                <div 
+                  className={`receiver-box ${selectedReceiver === 'osama' ? 'active' : ''}`}
+                  onClick={() => setSelectedReceiver('osama')}
+                >
+                  <div className="receiver-info">
+                    <span className="name">Osama Al-korashy</span>
+                    <span className="phone">+20 100 100 2078</span>
+                  </div>
+                  {selectedReceiver === 'osama' && <span className="check-mark">✓</span>}
+                </div>
+                <div className="receiver-box add-new">
+                  <span className="plus-icon">+</span>
+                  <span>Add someone else</span>
+                </div>
+              </div>
+            </section>
+
+            {/* تعليمات التوصيل */}
+            <section className="form-section">
+              <div className="flex-header">
+                <h2 className="section-heading">Delivery Instructions</h2>
+              </div>
+              <div className="radio-list">
+                <label className="radio-item">
+                  <input type="radio" name="delivery" />
+                  <span className="custom-radio"></span>
+                  🏠 Leave at my door
+                </label>
+                <label className="radio-item">
+                  <input type="radio" name="delivery" defaultChecked />
+                  <span className="custom-radio"></span>
+                  📞 Call me before arriving
+                </label>
+              </div>
+            </section>
+
+            {/* طريقة الدفع */}
+            <section className="form-section">
+              <h2 className="section-heading">Pay with</h2>
+              <div className="payment-list">
+                <label className="payment-item">
+                  <input type="radio" name="pay" onChange={() => setPaymentMethod('card')} />
+                  <span className="custom-radio"></span>
+                  Credit / Debit Card
+                  <div className="card-logos">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" alt="visa" />
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="mastercard" />
+                  </div>
+                </label>
+                <label className="payment-item">
+                  <input type="radio" name="pay" onChange={() => setPaymentMethod('insta')} />
+                  <span className="custom-radio"></span>
+                  InstaPay
+                </label>
+                <label className="payment-item">
+                  <input type="radio" name="pay" defaultChecked onChange={() => setPaymentMethod('cash')} />
+                  <span className="custom-radio"></span>
+                  Cash On Delivery
+                </label>
+              </div>
+            </section>
+
+            {/* أزرار التحكم */}
+            <div className="footer-buttons">
+              <button 
+                className="btn-confirm" 
+                onClick={handleConfirmOrder}
+                disabled={cartItems.length === 0}
+                style={{ opacity: cartItems.length === 0 ? 0.5 : 1, cursor: cartItems.length === 0 ? 'not-allowed' : 'pointer' }}
+              >
+                Confirm Order
+              </button>
+              <button className="btn-back" onClick={() => navigate(-1)}>Back</button>
             </div>
-          ))}
+          </div>
+
+          {/* ==========================================
+              ملخص الدفع المربوط ديناميكياً بالسلة الحقيقية
+              ========================================== */}
+          <div className="payment-summary">
+            <h2 className="section-heading">Payment Summary</h2>
+            <div className="summary-details">
+              <div className="summary-row">
+                <span>Order ({cartItems.reduce((s, i) => s + (Number(i.quantity) || 0), 0)} items)</span>
+                <span>EGP {subtotal.toLocaleString()}</span>
+              </div>
+              <div className="summary-row">
+                <span>Tax (5%)</span>
+                <span>EGP {tax.toLocaleString()}</span>
+              </div>
+              <div className="summary-row">
+                <span>Shipping Fee</span>
+                <span>EGP {shipping.toLocaleString()}</span>
+              </div>
+              <div className="summary-divider"></div>
+              <div className="summary-row total">
+                <span>Total</span>
+                <span>EGP {total.toLocaleString()}</span> 
+              </div>
+            </div>
+          </div>
+
         </div>
-
-        {step === 3 ? (
-          <div className="checkout-success" id="checkout-success">
-            <div className="success-icon">✅</div>
-            <h2>Order Confirmed!</h2>
-            <p>Thank you for your order. You will receive a confirmation email shortly.</p>
-            <p className="order-num">Order #IC-2026-8847</p>
-            <button className="btn-primary" id="back-home-btn" onClick={() => navigate('/')}>
-              Continue Shopping
-            </button>
-          </div>
-        ) : (
-          <div className="checkout-layout">
-            <div className="checkout-form-panel">
-              {step === 1 && (
-                <form id="shipping-form" onSubmit={(e) => { e.preventDefault(); setStep(2); }}>
-                  <h2>Shipping Information</h2>
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label className="form-label">First Name</label>
-                      <input id="checkout-firstname" type="text" className="form-input" placeholder="John" required
-                        value={form.firstName} onChange={e => setForm({...form, firstName: e.target.value})} />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">Last Name</label>
-                      <input id="checkout-lastname" type="text" className="form-input" placeholder="Doe" required
-                        value={form.lastName} onChange={e => setForm({...form, lastName: e.target.value})} />
-                    </div>
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Email</label>
-                    <input id="checkout-email" type="email" className="form-input" placeholder="john@company.com" required
-                      value={form.email} onChange={e => setForm({...form, email: e.target.value})} />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Phone</label>
-                    <input id="checkout-phone" type="tel" className="form-input" placeholder="+1 234 567 8900" required
-                      value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Address</label>
-                    <input id="checkout-address" type="text" className="form-input" placeholder="123 Industrial Ave" required
-                      value={form.address} onChange={e => setForm({...form, address: e.target.value})} />
-                  </div>
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label className="form-label">City</label>
-                      <input id="checkout-city" type="text" className="form-input" placeholder="New York" required
-                        value={form.city} onChange={e => setForm({...form, city: e.target.value})} />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">Country</label>
-                      <select id="checkout-country" className="form-input" required
-                        value={form.country} onChange={e => setForm({...form, country: e.target.value})}>
-                        <option value="">Select Country</option>
-                        <option value="US">United States</option>
-                        <option value="UAE">United Arab Emirates</option>
-                        <option value="SA">Saudi Arabia</option>
-                        <option value="DE">Germany</option>
-                        <option value="CN">China</option>
-                      </select>
-                    </div>
-                  </div>
-                  <button type="submit" className="btn-primary checkout-next-btn" id="step1-next">
-                    Continue to Payment →
-                  </button>
-                </form>
-              )}
-
-              {step === 2 && (
-                <form id="payment-form" onSubmit={handleOrder}>
-                  <h2>Payment Details</h2>
-                  <div className="form-group">
-                    <label className="form-label">Card Number</label>
-                    <input id="checkout-card-num" type="text" className="form-input" placeholder="1234 5678 9012 3456" required
-                      value={form.cardNum} onChange={e => setForm({...form, cardNum: e.target.value})} />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Cardholder Name</label>
-                    <input id="checkout-card-name" type="text" className="form-input" placeholder="John Doe" required
-                      value={form.cardName} onChange={e => setForm({...form, cardName: e.target.value})} />
-                  </div>
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label className="form-label">Expiry Date</label>
-                      <input id="checkout-expiry" type="text" className="form-input" placeholder="MM/YY" required
-                        value={form.expiry} onChange={e => setForm({...form, expiry: e.target.value})} />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">CVV</label>
-                      <input id="checkout-cvv" type="text" className="form-input" placeholder="123" required
-                        value={form.cvv} onChange={e => setForm({...form, cvv: e.target.value})} />
-                    </div>
-                  </div>
-                  <div className="checkout-pay-btns">
-                    <button type="button" className="btn-outline" id="step2-back" onClick={() => setStep(1)}>← Back</button>
-                    <button type="submit" className="btn-primary" id="place-order-btn">Place Order</button>
-                  </div>
-                </form>
-              )}
-            </div>
-
-            {/* Order Summary */}
-            <div className="checkout-summary" id="checkout-summary">
-              <h3>Order Summary</h3>
-              <div className="summary-line"><span>2x Pendant Light</span><span>$1,000</span></div>
-              <div className="summary-line"><span>1x Leather Chair</span><span>$890</span></div>
-              <div className="summary-line"><span>Shipping</span><span>$45</span></div>
-              <div className="summary-line"><span>Tax</span><span>$97</span></div>
-              <div className="summary-total"><span>Total</span><span>$2,032</span></div>
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* مودال النجاح عند تأكيد الطلب */}
+      {showSuccess && (
+        <div className="modal-overlay">
+          <div className="success-card">
+            <button className="close-x" onClick={() => setShowSuccess(false)}>×</button>
+            <div className="modal-body">
+              <h2 className="thanks-msg">Thanks for your order!</h2>
+              <div className="status-container">
+                <p>Your order is on its way</p>
+                <div className="plane-icon">✈️</div>
+              </div>
+              <button className="btn-continue" onClick={() => navigate('/services')}>
+                Continue Shopping
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
-  )
+  );
 }

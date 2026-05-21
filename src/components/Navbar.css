@@ -1,116 +1,93 @@
+/* ==========================================================================
+   1. MAIN NAVBAR (FIXED & DYNAMIC SCROLL DESIGN)
+   ========================================================================== */
 .navbar {
-  position: sticky;
+  position: fixed; /* تم التعديل إلى fixed ليبقى ثابتاً أثناء الـ Scroll */
   top: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
   z-index: 1000;
-  background: var(--white);
-  border-bottom: 1px solid var(--border);
-  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease; /* حركة ناعمة عند تغير اللون */
+}
+
+/* حالة الناف بار في أعلى الصفحة (شفاف) */
+.transparent-nav {
+  background-color: transparent;
+  box-shadow: none;
+}
+
+/* حالة الناف بار عند النزول (خلفية بيضاء مع ظل) */
+.scrolled-nav {
+  background-color: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); /* ظل ناعم جداً لفصله عن المحتوى */
 }
 
 .navbar-inner {
+  width: 95%;
+  max-width: 1400px;
+  margin: 0 auto;
   display: flex;
   align-items: center;
-  gap: 20px;
-  padding: 0 32px;
-  height: 70px;
-  max-width: 1440px;
-  margin: 0 auto;
+  justify-content: space-between;
+}
+
+/* تقسيم الناف بار إلى قسمين يمين ويسار */
+.nav-left, .nav-right {
+  display: flex;
+  align-items: center;
+  gap: 25px; /* المسافة المريحة بين الأيقونات */
 }
 
 .nav-menu-btn {
   background: none;
-  padding: 8px;
-  color: var(--text-primary);
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: var(--transition);
-  flex-shrink: 0;
-}
-
-.nav-menu-btn:hover {
-  background: var(--light-bg);
-  color: var(--primary);
-}
-
-.nav-logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
-  text-decoration: none;
-}
-
-.nav-logo span {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: -0.3px;
-  white-space: nowrap;
-}
-
-.nav-search {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: var(--light-bg);
-  border: 1.5px solid var(--border);
-  border-radius: 8px;
-  padding: 0 16px;
-  height: 42px;
-  max-width: 600px;
-  transition: var(--transition);
-}
-
-.nav-search:focus-within {
-  border-color: var(--primary);
-  background: var(--white);
-  box-shadow: 0 0 0 3px rgba(198,69,67,0.08);
-}
-
-.nav-search svg {
-  color: var(--text-muted);
-  flex-shrink: 0;
-}
-
-.nav-search input {
   border: none;
-  background: transparent;
-  flex: 1;
-  font-size: 14px;
-  color: var(--text-primary);
-}
-
-.nav-search input::placeholder {
-  color: var(--text-muted);
-}
-
-.nav-icons {
+  cursor: pointer;
+  color: #1e293b;
   display: flex;
   align-items: center;
-  gap: 4px;
-  margin-left: auto;
-  flex-shrink: 0;
+  padding: 5px;
+  transition: color 0.2s;
+}
+.nav-menu-btn:hover {
+  color: #bc3433;
 }
 
+.nav-logo img {
+  height: 35px;
+  display: block;
+  transition: transform 0.2s ease;
+}
+.nav-logo img:hover {
+  transform: scale(1.02);
+}
+
+/* ==========================================================================
+   2. ICONS & BADGES
+   ========================================================================== */
 .nav-icon-btn {
-  position: relative;
   background: none;
-  padding: 10px;
-  color: var(--text-secondary);
-  border-radius: var(--radius-sm);
+  border: none;
+  color: #1e293b; /* لون مقارب للأسود ليناسب الخلفيات الفاتحة */
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: var(--transition);
+  padding: 5px;
   text-decoration: none;
+  transition: all 0.2s ease;
 }
 
 .nav-icon-btn:hover {
-  background: var(--light-bg);
-  color: var(--primary);
+  color: #bc3433; /* اللون الأحمر عند التمرير */
+  transform: translateY(-2px);
+}
+
+.admin-icon {
+  color: #bc3433; /* تمييز أيقونة لوحة التحكم */
 }
 
 .nav-cart-btn {
@@ -119,71 +96,166 @@
 
 .cart-badge {
   position: absolute;
-  top: 4px;
-  right: 4px;
-  background: var(--primary);
+  top: -5px;
+  right: -8px;
+  background-color: #bc3433;
   color: white;
   font-size: 10px;
-  font-weight: 700;
-  width: 17px;
-  height: 17px;
-  border-radius: 50%;
+  font-weight: bold;
+  border-radius: 10px;
+  padding: 2px 6px;
+  min-width: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  line-height: 1;
 }
 
-/* Mobile Menu */
-.nav-mobile-menu {
-  background: var(--white);
-  border-top: 1px solid var(--border);
-  box-shadow: var(--shadow-lg);
-  position: absolute;
-  top: 70px;
+/* ==========================================================================
+   3. SEARCH MODAL (OVERLAY & POPUP)
+   ========================================================================== */
+.search-overlay {
+  position: fixed;
+  top: 0;
   left: 0;
   right: 0;
-  z-index: 999;
-  animation: slideDown 0.2s ease;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(5px); 
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 90px;
+  z-index: 2000;
 }
 
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+.search-modal {
+  background-color: #ffffff;
+  width: 90%;
+  max-width: 680px;
+  border-radius: 16px;
+  padding: 30px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  position: relative;
+  animation: modalSlideDown 0.25s ease-out;
+}
+
+@keyframes modalSlideDown {
+  from { transform: translateY(-30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.close-search-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: none;
+  border: none;
+  color: #a0aec0;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.close-search-btn:hover {
+  color: #bc3433;
+}
+
+.modal-search-box {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 12px;
+  margin-top: 15px;
+  color: #bc3433;
+}
+
+.modal-search-box input {
+  width: 100%;
+  border: none;
+  outline: none;
+  font-size: 18px;
+  color: #2d3748;
+  background: transparent;
+}
+
+.top-searches {
+  margin-top: 25px;
+}
+
+.top-searches h3 {
+  font-size: 13px;
+  color: #718096;
+  margin-bottom: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tags-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.tag-item {
+  background-color: #f7fafc;
+  border: 1px solid #e2e8f0;
+  color: #4a5568;
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-size: 13px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.tag-item:hover {
+  background-color: #bc3433;
+  color: #ffffff;
+  border-color: #bc3433;
+  transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   4. MOBILE DROPDOWN MENU
+   ========================================================================== */
+.nav-mobile-menu {
+  position: absolute;
+  top: 80px;
+  left: 0;
+  right: 0;
+  background-color: #ffffff;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  border-top: 1px solid #edf2f7;
+  padding: 20px;
 }
 
 .nav-mobile-menu nav {
   display: flex;
   flex-direction: column;
-  padding: 12px 0;
+  gap: 15px;
 }
 
 .nav-mobile-menu nav a {
-  padding: 14px 32px;
-  font-size: 15px;
-  color: var(--text-primary);
-  transition: var(--transition);
   text-decoration: none;
-  border-left: 3px solid transparent;
+  color: #2d3748;
+  font-size: 16px;
+  font-weight: 500;
+  padding: 6px 0;
+  transition: color 0.2s;
 }
 
 .nav-mobile-menu nav a:hover {
-  background: var(--light-bg);
-  color: var(--primary);
-  border-left-color: var(--primary);
+  color: #bc3433;
 }
 
+/* ==========================================================================
+   5. RESPONSIVE DESIGN
+   ========================================================================== */
 @media (max-width: 768px) {
-  .navbar-inner {
-    padding: 0 16px;
-    gap: 12px;
+  .nav-left, .nav-right {
+    gap: 15px;
   }
-
-  .nav-search {
-    max-width: none;
-  }
-
-  .nav-icons .nav-icon-btn:not(.nav-cart-btn) {
-    display: none;
+  .nav-logo img {
+    height: 28px;
   }
 }

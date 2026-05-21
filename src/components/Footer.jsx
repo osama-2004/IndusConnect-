@@ -1,25 +1,20 @@
 import { Link } from 'react-router-dom'
 import './Footer.css'
+import logo from '../assets/logo.svg';
+
 
 const Logo = () => (
-  <div className="footer-logo">
-    {/* <svg width="28" height="28" viewBox="0 0 40 40" fill="none">
-      <path d="M20 4L36 13V27L20 36L4 27V13L20 4Z" fill="#C64543"/>
-      <path d="M20 4L28 9L20 14L12 9L20 4Z" fill="#BF3834" opacity="0.8"/>
-      <path d="M20 14V36L4 27V13L20 14Z" fill="#991B1B" opacity="0.6"/>
-      <path d="M20 14L36 13V27L20 36V14Z" fill="#BF3834" opacity="0.7"/>
-    </svg> */}
-    <span>IndusConnect</span>
-  </div>
+  <img src={logo} alt="IndusConnect Logo" height="28" />
 )
-
 export default function Footer() {
   return (
     <footer className="footer" id="footer">
       <div className="footer-inner">
         {/* Logo + Socials */}
         <div className="footer-brand">
-          <Logo />
+          <Link to="/assets/logo.svg" className="footer__logo" >
+            <Logo />
+          </Link>
           <div className="footer-socials">
             {/* Instagram */}
             <a href="#" className="social-icon" id="footer-instagram" aria-label="Instagram">

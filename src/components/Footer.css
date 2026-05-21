@@ -1,6 +1,7 @@
 .footer {
   background: var(--dark);
   color: var(--white);
+  display: block;
 }
 
 .footer-inner {
