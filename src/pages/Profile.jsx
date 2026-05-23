@@ -1,22 +1,8 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useFavorites, useCart } from '../App'; 
 import './Profile.css'
-
-// ==========================================
-// 🛠️ كالوج المنتجات الكامل للموقع (Master Catalog)
-// الـ Wishlist هتقرأ منه ديناميكياً بناءً على القلوب اللي المستخدم هيضغط عليها
-// ==========================================
-const allProductsCatalog = [
-  // ... باقي البيانات
-
-  { id: 1, name: 'Solid Shelf Table', price: 1000, category: 'Furniture', rating: 5, reviews: 300, image: 'cat_furniture_shelf.png', description: 'Sleek wooden table with a functional shelf.', viewedCount: '200+', moq: '12pcs', unitPrice: '1000EGP' },
-  { id: 2, name: 'Tinted Glass Lights', price: 700, category: 'Furniture', rating: 4.5, reviews: 120, image: 'product_amber_pendant.png', description: 'Beautiful tinted glass pendant lights for modern homes.', viewedCount: '150+', moq: '6pcs', unitPrice: '700EGP' },
-  { id: 3, name: 'Cardboard Boxes', price: 10, category: 'Package', rating: 4, reviews: 80, image: 'product_agri_equipment.png', description: 'Heavy-duty cardboard boxes for industrial packaging.', viewedCount: '300+', moq: '500pcs', unitPrice: '10EGP' },
-  { id: 4, name: 'Hoodies', price: 250, category: 'Textile', rating: 4, reviews: 100, image: 'cat_textile_hoodies.png', description: 'Comfortable hoodies suitable for casual wear.', viewedCount: '500+', moq: '50pcs', unitPrice: '250EGP' },
-  { id: 5, name: 'Modern pendant light', price: 600, category: 'Furniture', rating: 4.8, reviews: 95, image: 'product_amber_pendant.png', description: 'Elegant modern pendant light fixtures.', viewedCount: '180+', moq: '10pcs', unitPrice: '600EGP' },
-  { id: 6, name: 'PVC Rolls', price: 500, category: 'Raw Material', rating: 2, reviews: 400, image: 'cat_raw_pvc.png', description: 'Flexible PVC rolls used for industrial applications.', viewedCount: '600+', moq: '10pcs', unitPrice: '500EGP' },
-];
+import { DEFAULT_PRODUCTS } from './Services'; // 🛠️ استخدمنا الداتا الحقيقية بدل الثابتة
 
 // ==========================================
 // USER PROFILE COMPONENT
@@ -26,10 +12,20 @@ export default function Profile() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null); 
   
-  // استدعاء الهوكس العالمية للمفصلة والسلة
+  // استدعاء الهوكس العالمية للمفضلة والسلة
   const { toggleFavorite, isFavorite } = useFavorites();
   const { addToCart } = useCart(); 
   
+  // 🛠️ جلب كل المنتجات (الافتراضية + اللي ضافها المورد/الأدمن) عشان الـ Wishlist تبقى ديناميكية
+  const [globalProducts, setGlobalProducts] = useState(() => {
+    try {
+      const saved = localStorage.getItem('indus_products');
+      return saved ? JSON.parse(saved) : DEFAULT_PRODUCTS;
+    } catch (e) {
+      return DEFAULT_PRODUCTS;
+    }
+  });
+
   // قراءة بيانات البروفايل
   const [user, setUser] = useState(() => {
     try {
@@ -53,32 +49,62 @@ export default function Profile() {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editedUser, setEditedUser] = useState({ ...user });
 
-  // 🛠️ ربط المفضلة بالخدمة: فلترة المنتجات وعرض المنتجات اللي معمول لها قلب فقط
-  const wishlistProducts = allProductsCatalog.filter(product => isFavorite(product.id));
+  // 🛠️ ربط المفضلة بالمنتجات الحقيقية
+  const wishlistProducts = globalProducts.filter(product => isFavorite(product.id));
 
-  // دالة رفع الصورة
+  // 🛠️ التعديل الأهم: ضغط الصورة الشخصية قبل حفظها لمنع انهيار الذاكرة
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const newImageData = reader.result;
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_DIMENSION = 200; // أبعاد صغيرة ومناسبة لصورة البروفايل
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_DIMENSION) { height *= MAX_DIMENSION / width; width = MAX_DIMENSION; }
+        } else {
+          if (height > MAX_DIMENSION) { width *= MAX_DIMENSION / height; height = MAX_DIMENSION; }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // ضغط الصورة وحفظها
+        const compressedImage = canvas.toDataURL('image/jpeg', 0.7);
+        
         setUser(prev => {
-          const updatedUser = { ...prev, image: newImageData };
-          localStorage.setItem('indus_user_profile', JSON.stringify(updatedUser)); 
+          const updatedUser = { ...prev, image: compressedImage };
+          try {
+            localStorage.setItem('indus_user_profile', JSON.stringify(updatedUser)); 
+          } catch (error) {
+            console.warn("Storage Full during profile save.");
+          }
           return updatedUser;
         });
-        setEditedUser(prev => ({ ...prev, image: newImageData }));
+        setEditedUser(prev => ({ ...prev, image: compressedImage }));
       };
-      reader.readAsDataURL(file);
-    }
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
   };
 
   // دالة حفظ التعديلات
   const handleSaveProfile = () => {
     setUser(editedUser);
     setIsEditingProfile(false);
-    localStorage.setItem('indus_user_profile', JSON.stringify(editedUser)); 
+    try {
+      localStorage.setItem('indus_user_profile', JSON.stringify(editedUser)); 
+    } catch (error) {
+      console.warn("Storage Full");
+    }
   };
 
   const handleAddToCart = (e, product) => {
@@ -189,11 +215,10 @@ export default function Profile() {
               <span className="icon">💳</span> Payment Methods <span className="arrow">›</span>
             </button>
             
-            {/* 🛠️ زرار الخروج اللي بيمسح الداتا كلها */}
             <button 
               className="nav-item-btn signout-btn" 
               onClick={() => {
-                localStorage.clear(); // مسح شامل وكامل لكل الداتا
+                localStorage.clear(); 
                 window.location.hash = '/login'; 
                 window.location.reload(); 
               }}
@@ -237,8 +262,9 @@ export default function Profile() {
                   {wishlistProducts.map(product => {
                     const isFav = isFavorite(product.id);
                     
-                    const cleanPath = product.image.startsWith('/') ? product.image.substring(1) : product.image;
-                    const imageSrc = product.image.startsWith('http') || product.image.startsWith('data:')
+                    // 🛠️ تظبيط مسار الصور للـ Wishlist بنفس المنطق الآمن
+                    const cleanPath = (product.image || '').startsWith('/') ? product.image.substring(1) : product.image;
+                    const imageSrc = product.image && (product.image.startsWith('http') || product.image.startsWith('data:'))
                       ? product.image
                       : `${import.meta.env.BASE_URL || '/'}${cleanPath}`;
 
@@ -248,7 +274,8 @@ export default function Profile() {
                           <img 
                             src={imageSrc} 
                             alt={product.name} 
-                            onError={(e) => { e.target.src = 'https://via.placeholder.com/300?text=IndusConnect'; }}
+                            // 🛠️ استبدال البلايس هولدر برابط آمن
+                            onError={(e) => { e.target.src = 'https://placehold.co/300x300/e2e8f0/64748b?text=IndusConnect'; }}
                           />
                           
                           <div className="wish-overlay-buttons">
@@ -275,21 +302,21 @@ export default function Profile() {
                         <div className="wish-card-info">
                           <span className="wish-cat-tag">{product.category}</span>
                           <h3 className="wish-prod-name">{product.name}</h3>
-                          <p className="wish-prod-desc">{product.description}</p>
+                          <p className="wish-prod-desc">{product.description || 'No description available.'}</p>
                           <div className="wish-prod-meta">
-                            <span>👁️ {product.viewedCount} viewed in past week</span>
-                            <span className="wish-rating">⭐ {product.rating} <small>({product.reviews})</small></span>
+                            <span>👁️ {product.viewedCount || '10+'} viewed in past week</span>
+                            <span className="wish-rating">⭐ {product.rating || 5} <small>({product.reviews || 0})</small></span>
                           </div>
                         </div>
                         
                         <div className="wish-card-footer">
                           <div className="wish-footer-col">
                             <span className="w-lbl">MOQ</span>
-                            <span className="w-val">{product.moq}</span>
+                            <span className="w-val">{product.moq || '10 Unit'}</span>
                           </div>
                           <div className="wish-footer-col w-highlight">
                             <span className="w-lbl">Unit Price</span>
-                            <span className="w-val">{product.unitPrice}</span>
+                            <span className="w-val">{product.unitPrice || `${product.price}EGP`}</span>
                           </div>
                         </div>
                       </Link>

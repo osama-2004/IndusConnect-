@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useFavorites } from '../App'; // 🛠️ الحفاظ على استدعاء المفضلة
 import './ServiceDetail.css'
 
 // ============================================================================
@@ -51,6 +52,9 @@ const StarRating = ({ rating, totalReviews }) => (
 export default function ServiceDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  
+  // 🛠️ الحفاظ على تفعيل المفضلة
+  const { toggleFavorite, isFavorite } = useFavorites();
 
   // Local state hook reflecting dynamic updates derived from localStorage keys
   const [liveProducts, setLiveProducts] = useState(() => {
@@ -74,6 +78,9 @@ export default function ServiceDetail() {
   const [activeTab, setActiveTab] = useState('reviews');
   const [qty, setQty] = useState(1); 
   const [visibleReviews, setVisibleReviews] = useState(3);
+  
+  // 🛠️ التحقق هل المنتج في المفضلة
+  const isFav = isFavorite(product.id);
 
   // Hardcoded evaluation contextual mock dataset parameters
   const reviewsData = [
@@ -124,9 +131,34 @@ export default function ServiceDetail() {
         
         {/* Left Column Aspect Frame: Dynamic Product Media Viewport Wrapper */}
         <div className="image-column">
-          <div className="main-image-holder" style={{cursor: 'pointer'}}>
-            <button className="heart-icon-btn">❤</button>
-            <img src={getProductImage(product.image || product.images?.[0])} alt={product.name} className="img-fluid" />
+          {/* 🛠️ تعديل: إزالة مقاسات حاوية الصورة وتوسيط المحتوى. الإبقاء فقط على الموضع النسبي لاستقرار القلب */}
+          <div className="main-image-holder" style={{cursor: 'pointer', position: 'relative'}}>
+            {/* 🛠️ الحفاظ على زر المفضلة ومنطقه البرمجي. تنظيف الـ Inline Styles المنسقة */}
+            <button 
+              className={`heart-icon-btn ${isFav ? 'active-fav' : ''}`}
+              style={{
+                position: 'absolute',
+                top: '15px',
+                right: '15px',
+                zIndex: 10,
+                color: isFav ? '#c24438' : '#999'
+              }}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleFavorite(product);
+              }}
+            >
+              {isFav ? '❤️' : '♡'}
+            </button>
+            
+            {/* 🛠️ تعديل: إزالة الـ Inline Styles الخاصة بمقاسات الصورة (width/height/objectFit) لتعود لشكلها الأصلي */}
+            <img 
+              src={getProductImage(product.image || product.images?.[0])} 
+              alt={product.name} 
+              className="img-fluid" 
+              onError={(e) => { e.target.src = 'https://via.placeholder.com/300?text=IndusConnect'; }}
+            />
           </div>
         </div>
 

@@ -2,7 +2,8 @@
 .checkout-wrapper {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background-color: #f9f9f9;
-  min-height: 100vh;
+  min-height: 140vh;
+  max-width: 1440px;
   padding: 40px 10%;
   color: #333;
   position: relative;
@@ -241,7 +242,8 @@ input[type="radio"]:checked + .custom-radio::after {
 
 .success-card {
   background: white;
-  width: 500px;
+  width: 700px;
+  height: 500px;
   padding: 60px 40px;
   border-radius: 20px;
   text-align: center;
@@ -289,8 +291,9 @@ input[type="radio"]:checked + .custom-radio::after {
   background: #b33939;
   color: white;
   border: none;
+  margin-top: 20px;
   padding: 15px 50px;
-  border-radius: 30px;
+  border-radius: 20px;
   font-size: 18px;
   cursor: pointer;
 }

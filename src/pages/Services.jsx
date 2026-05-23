@@ -5,7 +5,6 @@ import './Services.css';
 
 // ==========================================
 // DEFAULT PRODUCTS DATA ARRAY
-// 🛠️ تم إضافة كلمة export هنا لتتمكن صفحة المفضلة من قراءة البيانات
 // ==========================================
 export const DEFAULT_PRODUCTS = [
   { id: 1, name: 'Modern Pendant Light', price: 600, category: 'Furniture', rating: 4, reviews: 100, image: 'product_amber_pendant.png', description: 'Modern lamp with a practical and artistic design.', viewedCount: '50+', moq: '20pcs', unitPrice: '700EGP' },
@@ -36,14 +35,22 @@ export default function Services() {
   const { toggleFavorite, isFavorite } = useFavorites();
 
   const [allProducts, setAllProducts] = useState(() => {
-    const saved = localStorage.getItem('indus_products');
-    return saved ? JSON.parse(saved) : DEFAULT_PRODUCTS;
+    try {
+      const saved = localStorage.getItem('indus_products');
+      return saved ? JSON.parse(saved) : DEFAULT_PRODUCTS;
+    } catch (e) {
+      return DEFAULT_PRODUCTS;
+    }
   });
 
   useEffect(() => {
     const syncProducts = () => {
-      const saved = localStorage.getItem('indus_products');
-      if (saved) setAllProducts(JSON.parse(saved));
+      try {
+        const saved = localStorage.getItem('indus_products');
+        if (saved) setAllProducts(JSON.parse(saved));
+      } catch (e) {
+        console.error("Error parsing products from local storage", e);
+      }
     };
 
     window.addEventListener('storage', syncProducts);
@@ -85,10 +92,10 @@ export default function Services() {
       if (existingIndex > -1) {
         cartItems[existingIndex].quantity = (cartItems[existingIndex].quantity || 1) + 1;
       } else {
-        const cleanImagePath = product.image.startsWith('/') ? product.image.substring(1) : product.image;
+        // 🛠️ دمج المسار بشكل صحيح لسلة المشتريات
         const formattedImage = product.image.startsWith('data:') || product.image.startsWith('http') 
           ? product.image 
-          : `${import.meta.env.BASE_URL}${cleanImagePath}`;
+          : `${import.meta.env.BASE_URL}${product.image.replace(/^\//, '')}`;
         
         cartItems.push({
           id: product.id,
@@ -116,7 +123,7 @@ export default function Services() {
       const matchQ = !currentQuery || currentQuery.trim() === '' ||
         p.name.toLowerCase().includes(currentQuery.toLowerCase()) || 
         p.category.toLowerCase().includes(currentQuery.toLowerCase()) ||
-        p.description.toLowerCase().includes(currentQuery.toLowerCase());
+        (p.description && p.description.toLowerCase().includes(currentQuery.toLowerCase()));
 
       const matchPrice = Number(p.price) <= priceMax;
       const matchRating = minRating === 0 || p.rating >= minRating;
@@ -270,10 +277,11 @@ export default function Services() {
           {/* Products Dynamic Grid */}
           <div className="modern-products-grid">
             {currentProducts.map(product => {
-              const cleanPath = product.image.startsWith('/') ? product.image.substring(1) : product.image;
+              
+              // 🛠️ التعديل الجذري لمسار الصورة مع الـ Base URL 
               const imageSrc = product.image.startsWith('data:') || product.image.startsWith('http')
                 ? product.image
-                : `${import.meta.env.BASE_URL}${cleanPath}`;
+                : `${import.meta.env.BASE_URL}${product.image.replace(/^\//, '')}`;
                 
               const isFav = isFavorite(product.id);
               
@@ -288,7 +296,8 @@ export default function Services() {
                     <img 
                       src={imageSrc} 
                       alt={product.name} 
-                      onError={(e) => { e.target.src = 'https://via.placeholder.com/300?text=IndusConnect'; }}
+                      // 🛠️ استخدام Placeholder الآمن والسريع
+                      onError={(e) => { e.target.src = 'https://placehold.co/300x300/e2e8f0/64748b?text=No+Image'; }}
                     />
                     
                     <div className="img-overlay-actions inline-icons">

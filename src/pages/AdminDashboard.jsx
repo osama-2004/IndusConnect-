@@ -12,6 +12,8 @@ import './AdminDashboard.css';
 import logo from '../assets/logo.svg';
 import Footer from '../components/Footer'; 
 
+const DEFAULT_IMG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Crect width='300' height='300' fill='%23e2e8f0'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='18' fill='%2364748b'%3ENo Image%3C/text%3E%3C/svg%3E";
+
 const USERS_DATA = [
   { id: '5122', name: 'Laila Hassan', email: 'lailahassan6@gmail.com', date: 'Mar 22, 2026', status: 'Buyer', img: 'https://i.pravatar.cc/150?u=5122' },
   { id: '5123', name: 'Omar Ahmed', email: 'omarahmed00@gmail.com', date: 'Mar 25, 2026', status: 'Buyer', img: 'https://i.pravatar.cc/150?u=5123' },
@@ -59,11 +61,16 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     try {
-      localStorage.setItem('indus_products', JSON.stringify(products));
+      const productsToSave = products.map(p => ({
+        ...p,
+        image: p.image && (p.image.startsWith('http') || p.image.startsWith('data:')) ? p.image : DEFAULT_IMG
+      }));
+      localStorage.setItem('indus_products', JSON.stringify(productsToSave));
       window.dispatchEvent(new Event('storage')); 
     } catch (error) {
       console.error("Local Storage is full!", error);
-      alert("⚠️ مساحة الذاكرة ممتلئة! لا يمكن حفظ الصورة لأن حجمها كبير جداً.");
+      // تحذير في حالة نادرة جداً لو الذاكرة اتملت رغم الضغط
+      alert("⚠️ مساحة الذاكرة ممتلئة. يرجى مسح الذاكرة باستخدام localStorage.clear()");
     }
   }, [products]);
 
@@ -94,15 +101,43 @@ export default function AdminDashboard() {
     setSelectedProductIds(prev => prev.includes(id) ? prev.filter(itemId => itemId !== id) : [...prev, id]);
   };
 
+  // 🛠️ الحل السحري: ضغط الصورة (Compress) في الخلفية لتقليل حجمها قبل حفظها
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 1500000) { 
-        alert("❌ حجم الصورة كبير جداً! يرجى اختيار صورة لا تتعدى 1.5 ميجابايت.");
-        return;
-      }
       const reader = new FileReader();
-      reader.onloadend = () => setNewProdData(prev => ({ ...prev, image: reader.result }));
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 400; // أقصى عرض
+          const MAX_HEIGHT = 400; // أقصى طول
+          let width = img.width;
+          let height = img.height;
+
+          // تصغير الأبعاد مع الحفاظ على نسبة العرض للطول
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // تحويل الصورة لـ jpeg بجودة 70% لتقليل الحجم بشكل كبير
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+          setNewProdData(prev => ({ ...prev, image: compressedBase64 }));
+        };
+        img.src = event.target.result;
+      };
       reader.readAsDataURL(file);
     }
   };
@@ -134,6 +169,8 @@ export default function AdminDashboard() {
     e.preventDefault();
     if (!newProdData.name || !newProdData.price) return;
 
+    const finalImageUrl = newProdData.image || DEFAULT_IMG;
+
     let updatedProductsList = [];
     if (isEditMode) {
       updatedProductsList = products.map(p => p.id === editingProductId ? {
@@ -144,7 +181,7 @@ export default function AdminDashboard() {
         category: newProdData.category || 'Furniture',
         status: newProdData.status || 'Approved',
         description: newProdData.description || '',
-        image: newProdData.image || p.image,
+        image: finalImageUrl,
         moq: newProdData.moq ? (String(newProdData.moq).includes('Unit') ? newProdData.moq : `${newProdData.moq} Unit`) : '10 Unit'
       } : p);
     } else {
@@ -157,7 +194,7 @@ export default function AdminDashboard() {
         rating: 5,
         reviews: 1,
         viewedCount: '10+',
-        image: newProdData.image || 'https://via.placeholder.com/300?text=IndusConnect',
+        image: finalImageUrl,
         description: newProdData.description || 'No description provided.',
         moq: newProdData.moq ? `${newProdData.moq} Unit` : '10 Unit',
         status: newProdData.status || 'Approved'
@@ -172,33 +209,31 @@ export default function AdminDashboard() {
   };
 
   return (
-    // 🛠️ تم التعديل هنا: الحاوية الرئيسية أصبحت Flex Column כדי تقسم الصفحة لجزئين (فوق داشبورد، وتحت فوتر)
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: '#F4F4F5' }}>
+    <div className="admin-wrapper">
       
-      {/* 🛠️ الجزء العلوي: الداشبورد نفسه (السايدبار والمحتوى) */}
-      <div className="dashboard-container" style={{ display: 'flex', flex: 1 }}>
-        
-        {/* Sidebar Component */}
-        <aside className="sidebar" style={{ backgroundColor: '#202938', width: '389px', minHeight: '1000px', top: '149px', left: '80px', padding: '20px 0', borderTopLeftRadius: '30px', borderBottomLeftRadius: '30px', margin: '50px' }}>
-          <div className="logo-section" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '0 25px', marginBottom: '50px' }}>
-            <img src={logo} alt="IndusConnect " style={{ height: '35px', objectFit: 'contain' }} />
+      <div className="admin-dashboard-container">
+          <div className="admin-logo-section">
+            <img src={logo} alt="IndusConnect" className="admin-logo-img" />
           </div>
+        {/* Sidebar Component */}
+        <aside className="admin-sidebar">
           
-          <nav className="nav-menu" style={{ display: 'flex', flexDirection: 'column' }}>
+          
+          <nav className="admin-nav-menu">
             <div 
-              style={{ padding: '15px 25px', margin: '5px 0', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '15px', color: activeTab === 'dashboard' ? '#fff' : '#9CA3AF', backgroundColor: activeTab === 'dashboard' ? '#4B5563' : 'transparent', borderTopRightRadius: '25px', borderBottomRightRadius: '25px', marginRight: '20px', fontWeight: activeTab === 'dashboard' ? 'bold' : 'normal', transition: 'all 0.3s' }}
+              className={`admin-nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
               onClick={() => { setActiveTab('dashboard'); setCurrentPage(1); }}
             >
               <LayoutDashboard size={20}/> Dashboard
             </div>
             <div 
-              style={{ padding: '15px 25px', margin: '5px 0', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '15px', color: activeTab === 'users' ? '#fff' : '#9CA3AF', backgroundColor: activeTab === 'users' ? '#4B5563' : 'transparent', borderTopRightRadius: '25px', borderBottomRightRadius: '25px', marginRight: '20px', fontWeight: activeTab === 'users' ? 'bold' : 'normal', transition: 'all 0.3s' }}
+              className={`admin-nav-item ${activeTab === 'users' ? 'active' : ''}`}
               onClick={() => { setActiveTab('users'); setCurrentPage(1); }}
             >
               <Users size={20}/> Manage Users
             </div>
             <div 
-              style={{ padding: '15px 25px', margin: '5px 0', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '15px', color: activeTab === 'products' ? '#fff' : '#9CA3AF', backgroundColor: activeTab === 'products' ? '#4B5563' : 'transparent', borderTopRightRadius: '25px', borderBottomRightRadius: '25px', marginRight: '20px', fontWeight: activeTab === 'products' ? 'bold' : 'normal', transition: 'all 0.3s' }}
+              className={`admin-nav-item ${activeTab === 'products' ? 'active' : ''}`}
               onClick={() => { setActiveTab('products'); setCurrentPage(1); }}
             >
               <Box size={20}/> Manage Products
@@ -207,18 +242,18 @@ export default function AdminDashboard() {
         </aside>
 
         {/* Main Content Dashboard */}
-        <main className="main-content" style={{ flex: 1, padding: '40px', overflowY: 'auto' }}>
+        <main className="admin-main-content">
           
           {/* Top Header */}
-          <header style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '20px', marginBottom: '30px' }}>
-            <button style={{ width: '45px', height: '45px', borderRadius: '50%', border: '1px solid #E5E7EB', backgroundColor: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4B5563', cursor: 'pointer' }}>
+          <header className="admin-top-header">
+            <button className="admin-icon-btn">
               <Bell size={20}/>
             </button>
-            <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=150" alt="Admin" style={{ width: '45px', height: '45px', borderRadius: '50%', objectFit: 'cover' }} />
+            <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=150" alt="Admin" className="admin-profile-img" />
           </header>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '30px' }}>
-            <h1 style={{ color: '#C24133', fontSize: '28px', fontWeight: 'bold', margin: 0 }}>
+          <div className="admin-page-title-section">
+            <h1 className="admin-page-title">
               {activeTab === 'dashboard' ? 'Dashboard' : activeTab === 'users' ? 'Manage Users' : 'Manage Products'}
             </h1>
           </div>
@@ -228,23 +263,24 @@ export default function AdminDashboard() {
               ========================================== */}
           {activeTab === 'dashboard' && (
             <>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px', marginBottom: '30px' }}>
+              <div className="admin-stats-grid">
                 <StatCard label="Total Users" val="1250" icon={<Users size={20} color="#C24133"/>} />
                 <StatCard label="Products Approved" val={products.filter(p=>p?.status==='Approved').length} icon={<CheckCircle2 size={20} color="#10B981"/>} />
                 <StatCard label="Products Pending" val={products.filter(p=>p?.status==='Pending').length} icon={<Clock size={20} color="#F59E0B"/>} />
                 <StatCard label="Products Rejected" val={products.filter(p=>p?.status==='Rejected').length} icon={<XCircle size={20} color="#EF4444"/>} />
               </div>
 
-              <div style={{ backgroundColor: '#fff', borderRadius: '16px', padding: '30px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                  <h3 style={{ fontSize: '22px', fontWeight: 'bold', color: '#1F2937', margin: 0 }}>User Growth</h3>
-                  <div style={{ display: 'flex', gap: '15px', fontSize: '12px', fontWeight: '500' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#10B981', opacity: 0.3 }}></div> Supplier</span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#C24133', opacity: 0.3 }}></div> Buyer</span>
+              <div className="admin-chart-panel">
+                <div className="admin-chart-header">
+                  <h3>User Growth</h3>
+                  <div className="admin-chart-legend">
+                    <span><div className="legend-dot green"></div> Supplier</span>
+                    <span><div className="legend-dot red"></div> Buyer</span>
                   </div>
                 </div>
-                <div style={{ width: '100%', height: '300px' }}>
-                  <ResponsiveContainer width="100%" height="100%">
+                {/* 🛠️ حل تحذير Recharts بضبط الحاويات بشكل دقيق */}
+                <div className="admin-chart-container" style={{ width: '100%', height: 300, minHeight: 300 }}>
+                  <ResponsiveContainer width="100%" height="100%" minHeight={300} minWidth={100}>
                     <AreaChart data={chartData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                       <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} dy={10} />
@@ -263,45 +299,41 @@ export default function AdminDashboard() {
               MANAGE USERS VIEW
               ========================================== */}
           {activeTab === 'users' && (
-            <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', padding: '20px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
-              <div style={{ width: '100%', maxWidth: '350px', marginBottom: '20px', position: 'relative' }}>
-                <Search size={18} style={{ position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
+            <div className="admin-card-panel">
+              <div className="admin-search-wrapper">
+                <Search size={18} className="admin-search-icon" />
                 <input 
                   type="text" 
+                  className="admin-search-input"
                   placeholder="Search" 
                   value={userSearch} 
                   onChange={(e) => { setUserSearch(e.target.value); setCurrentPage(1); }} 
-                  style={{ width: '100%', padding: '12px 15px 12px 45px', borderRadius: '8px', border: 'none', backgroundColor: '#F3F4F6', fontSize: '14px', outline: 'none' }} 
                 />
               </div>
               
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+              <table className="admin-data-table">
                 <thead>
-                  <tr style={{ borderBottom: '1px solid #E5E7EB' }}>
-                    <th style={{ padding: '15px 10px', color: '#111827', fontWeight: 'bold' }}>Full Name</th>
-                    <th style={{ padding: '15px 10px', color: '#111827', fontWeight: 'bold' }}>Id</th>
-                    <th style={{ padding: '15px 10px', color: '#111827', fontWeight: 'bold' }}>Registration date</th>
-                    <th style={{ padding: '15px 10px', color: '#111827', fontWeight: 'bold' }}>Status</th>
+                  <tr>
+                    <th>Full Name</th>
+                    <th>Id</th>
+                    <th>Registration date</th>
+                    <th>Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {currentUsersList.map((user) => (
-                    <tr key={user.id} style={{ borderBottom: '1px solid #F3F4F6' }}>
-                      <td style={{ padding: '15px 10px', display: 'flex', alignItems: 'center', gap: '15px' }}>
-                        <img src={user.img} alt="" style={{ width: '35px', height: '35px', borderRadius: '50%', objectFit: 'cover' }} />
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                          <span style={{ fontWeight: 'bold', color: '#111827' }}>{user.name}</span>
-                          <span style={{ color: '#6B7280', fontSize: '11px' }}>{user.email}</span>
+                    <tr key={user.id}>
+                      <td className="user-info-cell">
+                        <img src={user.img} alt="" className="user-avatar" />
+                        <div className="user-details">
+                          <span className="user-name">{user.name}</span>
+                          <span className="user-email">{user.email}</span>
                         </div>
                       </td>
-                      <td style={{ padding: '15px 10px', color: '#C24133', fontWeight: 'bold' }}>{user.id}</td>
-                      <td style={{ padding: '15px 10px', color: '#4B5563' }}>{user.date}</td>
-                      <td style={{ padding: '15px 10px' }}>
-                        <span style={{ 
-                          padding: '4px 12px', borderRadius: '12px', fontSize: '11px', fontWeight: 'bold',
-                          backgroundColor: user.status === 'Buyer' ? '#EFF6FF' : '#FEFCE8',
-                          color: user.status === 'Buyer' ? '#3B82F6' : '#EAB308'
-                        }}>
+                      <td className="user-id-cell">{user.id}</td>
+                      <td className="user-date-cell">{user.date}</td>
+                      <td>
+                        <span className={`admin-status-badge ${user.status.toLowerCase()}`}>
                           {user.status}
                         </span>
                       </td>
@@ -317,87 +349,87 @@ export default function AdminDashboard() {
               MANAGE PRODUCTS VIEW
               ========================================== */}
           {activeTab === 'products' && (
-            <div style={{ backgroundColor: '#fff', borderRadius: '16px', padding: '0', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)', overflow: 'hidden' }}>
+            <div className="admin-card-panel no-padding">
               
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', borderBottom: '1px solid #E5E7EB' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}>
+              <div className="admin-panel-header-actions">
+                <div className="admin-actions-left">
+                  <label className="admin-select-all">
                     <input 
                       type="checkbox" 
                       onChange={handleSelectAllProducts}
                       checked={selectedProductIds.length === currentProductsList.length && currentProductsList.length > 0} 
-                      style={{ accentColor: '#C24133', width: '16px', height: '16px' }}
                     />
                     Select All
                   </label>
                   
-                  <div style={{ position: 'relative', width: '250px' }}>
-                    <Search size={16} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
+                  <div className="admin-search-wrapper small">
+                    <Search size={16} className="admin-search-icon" />
                     <input 
                       type="text" 
+                      className="admin-search-input"
                       placeholder="Search Products..." 
                       value={productSearch} 
                       onChange={(e) => { setProductSearch(e.target.value); setCurrentPage(1); }} 
-                      style={{ width: '100%', padding: '8px 10px 8px 32px', borderRadius: '6px', border: '1px solid #E5E7EB', fontSize: '13px', outline: 'none' }} 
                     />
                   </div>
                 </div>
 
                 <button 
+                  className="admin-btn-primary"
                   onClick={() => { setIsEditMode(false); setNewProdData({ name: '', price: '', moq: '', category: 'Furniture', status: 'Approved', description: '', image: '' }); setIsModalOpen(true); }} 
-                  style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#C24133', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '25px', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}
                 >
                   <Plus size={16}/> Add Product
                 </button>
               </div>
 
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+              <table className="admin-data-table">
                 <thead>
-                  <tr style={{ borderBottom: '1px solid #E5E7EB' }}>
-                    <th style={{ width: '50px', padding: '15px 20px' }}></th>
-                    <th style={{ padding: '15px 10px', color: '#111827', fontWeight: 'bold' }}>Product Name</th>
-                    <th style={{ padding: '15px 10px', color: '#111827', fontWeight: 'bold' }}>Price</th>
-                    <th style={{ padding: '15px 10px', color: '#111827', fontWeight: 'bold' }}>Quantity</th>
-                    <th style={{ padding: '15px 10px', color: '#111827', fontWeight: 'bold' }}>Status</th>
-                    <th style={{ padding: '15px 10px', color: '#111827', fontWeight: 'bold', textAlign: 'center' }}>Actions</th>
+                  <tr>
+                    <th className="checkbox-col"></th>
+                    <th>Product Name</th>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                    <th>Status</th>
+                    <th className="actions-col">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {currentProductsList.length > 0 ? currentProductsList.map((prod) => (
-                    <tr key={prod.id} style={{ borderBottom: '1px solid #F3F4F6', transition: 'background-color 0.2s' }}>
-                      <td style={{ padding: '15px 20px' }}>
-                        <input type="checkbox" checked={selectedProductIds.includes(prod.id)} onChange={(e) => handleSelectProduct(e, prod.id)} style={{ accentColor: '#C24133', width: '16px', height: '16px' }} />
-                      </td>
-                      <td style={{ padding: '15px 10px', display: 'flex', alignItems: 'center', gap: '15px', fontWeight: 'bold', color: '#111827' }}>
-                        <img src={prod?.image || 'https://via.placeholder.com/40'} alt="" style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'cover' }} onError={(e)=>{e.target.src='https://via.placeholder.com/40'}}/>
-                        {prod?.name || 'Unnamed Product'}
-                      </td>
-                      <td style={{ padding: '15px 10px', fontWeight: 'bold' }}>
-                        <span style={{ color: '#C24133' }}>{Number(prod?.price || 0).toLocaleString()}</span> <span style={{ color: '#6B7280', fontSize: '11px' }}>EGP</span>
-                      </td>
-                      <td style={{ padding: '15px 10px', fontWeight: 'bold' }}>
-                        <span style={{ color: '#C24133' }}>{prod?.moq ? String(prod.moq).replace(/\D/g,'') : '10'}</span> <span style={{ color: '#6B7280', fontSize: '11px' }}>Unit</span>
-                      </td>
-                      <td style={{ padding: '15px 10px' }}>
-                        <span style={{ 
-                          padding: '4px 10px', borderRadius: '15px', fontSize: '10px', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '4px',
-                          color: prod?.status === 'Approved' ? '#10B981' : prod?.status === 'Pending' ? '#F59E0B' : '#EF4444',
-                          backgroundColor: prod?.status === 'Approved' ? '#ECFDF5' : prod?.status === 'Pending' ? '#FFFBEB' : '#FEF2F2',
-                          border: `1px solid ${prod?.status === 'Approved' ? '#A7F3D0' : prod?.status === 'Pending' ? '#FDE68A' : '#FECACA'}`
-                        }}>
-                          {prod?.status || 'Approved'} {prod?.status === 'Approved' && '✓'}
-                        </span>
-                      </td>
-                      <td style={{ padding: '15px 10px', textAlign: 'center' }}>
-                        <div style={{ display: 'flex', justifyContent: 'center', gap: '15px' }}>
-                          <button onClick={(e) => handleOpenEditModal(e, prod)} style={{ border: 'none', background: 'none', color: '#4B5563', cursor: 'pointer' }} title="Edit"><Pencil size={18} /></button>
-                          <button onClick={(e) => handleDeleteProduct(e, prod.id)} style={{ border: 'none', background: 'none', color: '#EF4444', cursor: 'pointer' }} title="Delete"><Trash2 size={18} /></button>
-                        </div>
-                      </td>
-                    </tr>
-                  )) : (
+                  {currentProductsList.length > 0 ? currentProductsList.map((prod) => {
+                    const imageSrc = prod?.image && (prod.image.startsWith('data:') || prod.image.startsWith('http'))
+                      ? prod.image
+                      : `${import.meta.env.BASE_URL}${(prod?.image || '').replace(/^\//, '')}`;
+
+                    return (
+                      <tr key={prod.id}>
+                        <td className="checkbox-col">
+                          <input type="checkbox" checked={selectedProductIds.includes(prod.id)} onChange={(e) => handleSelectProduct(e, prod.id)} />
+                        </td>
+                        <td className="product-info-cell">
+                          <img src={imageSrc} alt="" className="product-img" onError={(e)=>{e.target.src=DEFAULT_IMG}}/>
+                          {prod?.name || 'Unnamed Product'}
+                        </td>
+                        <td className="product-price-cell">
+                          <span className="price-val">{Number(prod?.price || 0).toLocaleString()}</span> <span className="currency">EGP</span>
+                        </td>
+                        <td className="product-qty-cell">
+                          <span className="qty-val">{prod?.moq ? String(prod.moq).replace(/\D/g,'') : '10'}</span> <span className="unit">Unit</span>
+                        </td>
+                        <td>
+                          <span className={`admin-prod-status ${prod?.status?.toLowerCase() || 'approved'}`}>
+                            {prod?.status || 'Approved'} {prod?.status === 'Approved' && '✓'}
+                          </span>
+                        </td>
+                        <td className="actions-col">
+                          <div className="action-buttons">
+                            <button onClick={(e) => handleOpenEditModal(e, prod)} title="Edit"><Pencil size={18} /></button>
+                            <button onClick={(e) => handleDeleteProduct(e, prod.id)} className="delete-btn" title="Delete"><Trash2 size={18} /></button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  }) : (
                     <tr>
-                      <td colSpan="6" style={{ textAlign: 'center', padding: '30px', color: '#6B7280' }}>No products found.</td>
+                      <td colSpan="6" className="no-data">No products found.</td>
                     </tr>
                   )}
                 </tbody>
@@ -410,8 +442,8 @@ export default function AdminDashboard() {
         </main>
       </div>
 
-      {/* 🛠️ الجزء السفلي: الفوتر بره السايدبار والمحتوى عشان ياخد 100% عرض الشاشة */}
-      <div style={{ width: '100%' }}>
+      {/* Footer Area */}
+      <div className="admin-footer-wrapper">
         <Footer />
       </div>
 
@@ -419,35 +451,38 @@ export default function AdminDashboard() {
           MODAL (ADD / EDIT PRODUCT)
           ========================================== */}
       {isModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, backdropFilter: 'blur(3px)' }}>
-          <div style={{ backgroundColor: '#fff', padding: '30px', borderRadius: '16px', width: '450px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>
-            <h3 style={{ marginBottom: '20px', fontWeight: 'bold', color: '#111827', fontSize: '20px' }}>{isEditMode ? 'Edit Product Card' : 'Create New Product Card'}</h3>
+        <div className="admin-modal-overlay">
+          <div className="admin-modal-content">
+            <h3 className="admin-modal-title">{isEditMode ? 'Edit Product Card' : 'Create New Product Card'}</h3>
             <form onSubmit={handleSaveProduct}>
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', fontSize: '13px', color: '#4B5563' }}>Product Image</label>
-                <div style={{ width: '100%', height: '140px', border: '2px dashed #D1D5DB', borderRadius: '12px', display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative', backgroundColor: '#F9FAFB', overflow: 'hidden' }}>
-                  {newProdData.image ? <img src={newProdData.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ color: '#9CA3AF', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}><ImageIcon size={32} /><span style={{fontSize:'12px', fontWeight:'500'}}>Click to upload image</span></div>}
-                  <input type="file" accept="image/*" onChange={handleImageChange} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} />
+              <div className="admin-form-group">
+                <label>Product Image</label>
+                <div className="admin-image-upload-area">
+                  {newProdData.image ? 
+                    <img src={newProdData.image} alt="" className="uploaded-img" /> : 
+                    <div className="upload-placeholder"><ImageIcon size={32} /><span>Click to upload image</span></div>
+                  }
+                  <input type="file" accept="image/*" onChange={handleImageChange} className="file-input" />
                 </div>
               </div>
-              <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', fontSize: '13px', color: '#4B5563' }}>Product Name</label>
-                <input type="text" value={newProdData.name} onChange={e => setNewProdData({...newProdData, name: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #D1D5DB', outline: 'none' }} required />
+              <div className="admin-form-group">
+                <label>Product Name</label>
+                <input type="text" className="admin-input" value={newProdData.name} onChange={e => setNewProdData({...newProdData, name: e.target.value})} required />
               </div>
-              <div style={{ marginBottom: '15px', display: 'flex', gap: '15px' }}>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', fontSize: '13px', color: '#4B5563' }}>Price (EGP)</label>
-                  <input type="number" value={newProdData.price} onChange={e => setNewProdData({...newProdData, price: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #D1D5DB', outline: 'none' }} required />
+              <div className="admin-form-row">
+                <div className="admin-form-group">
+                  <label>Price (EGP)</label>
+                  <input type="number" className="admin-input" value={newProdData.price} onChange={e => setNewProdData({...newProdData, price: e.target.value})} required />
                 </div>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', fontSize: '13px', color: '#4B5563' }}>Quantity / MOQ</label>
-                  <input type="text" value={newProdData.moq} onChange={e => setNewProdData({...newProdData, moq: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #D1D5DB', outline: 'none' }} placeholder="e.g. 50" />
+                <div className="admin-form-group">
+                  <label>Quantity / MOQ</label>
+                  <input type="text" className="admin-input" value={newProdData.moq} onChange={e => setNewProdData({...newProdData, moq: e.target.value})} placeholder="e.g. 50" />
                 </div>
               </div>
-              <div style={{ marginBottom: '15px', display: 'flex', gap: '15px' }}>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', fontSize: '13px', color: '#4B5563' }}>Category</label>
-                  <select value={newProdData.category} onChange={e => setNewProdData({...newProdData, category: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #D1D5DB', outline: 'none', backgroundColor: '#fff' }}>
+              <div className="admin-form-row">
+                <div className="admin-form-group">
+                  <label>Category</label>
+                  <select className="admin-input" value={newProdData.category} onChange={e => setNewProdData({...newProdData, category: e.target.value})}>
                     <option value="Furniture">Furniture</option>
                     <option value="Textile">Textile</option>
                     <option value="Raw Material">Raw Material</option>
@@ -455,22 +490,22 @@ export default function AdminDashboard() {
                     <option value="Electronic & Spare Parts">Electronic & Spare Parts</option>
                   </select>
                 </div>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', fontSize: '13px', color: '#4B5563' }}>Status</label>
-                  <select value={newProdData.status} onChange={e => setNewProdData({...newProdData, status: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #D1D5DB', outline: 'none', backgroundColor: '#fff' }}>
+                <div className="admin-form-group">
+                  <label>Status</label>
+                  <select className="admin-input" value={newProdData.status} onChange={e => setNewProdData({...newProdData, status: e.target.value})}>
                     <option value="Approved">Approved</option>
                     <option value="Pending">Pending</option>
                     <option value="Rejected">Rejected</option>
                   </select>
                 </div>
               </div>
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', fontSize: '13px', color: '#4B5563' }}>Description</label>
-                <textarea value={newProdData.description} onChange={e => setNewProdData({...newProdData, description: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #D1D5DB', outline: 'none', height: '60px', resize: 'none' }}></textarea>
+              <div className="admin-form-group">
+                <label>Description</label>
+                <textarea className="admin-textarea" value={newProdData.description} onChange={e => setNewProdData({...newProdData, description: e.target.value})}></textarea>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '15px' }}>
-                <button type="button" onClick={() => setIsModalOpen(false)} style={{ padding: '10px 20px', borderRadius: '25px', border: '1px solid #D1D5DB', backgroundColor: '#fff', fontWeight: 'bold', color: '#4B5563', cursor: 'pointer' }}>Cancel</button>
-                <button type="submit" style={{ padding: '10px 25px', borderRadius: '25px', backgroundColor: '#C24133', color: '#fff', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}>Save Product</button>
+              <div className="admin-modal-actions">
+                <button type="button" className="admin-btn-cancel" onClick={() => setIsModalOpen(false)}>Cancel</button>
+                <button type="submit" className="admin-btn-save">Save Product</button>
               </div>
             </form>
           </div>
@@ -484,30 +519,25 @@ export default function AdminDashboard() {
 // REUSABLE COMPONENTS
 // ==========================================
 const StatCard = ({ label, val, icon }) => (
-  <div style={{ backgroundColor: '#fff', padding: '25px', borderRadius: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
+  <div className="admin-stat-card">
     <div>
-      <p style={{ color: '#111827', fontSize: '13px', fontWeight: 'bold', margin: '0 0 10px 0' }}>{label}</p>
-      <h2 style={{ fontSize: '28px', fontWeight: '900', color: '#111827', margin: 0 }}>{val}</h2>
+      <p>{label}</p>
+      <h2>{val}</h2>
     </div>
-    <div style={{ width: '40px', height: '40px', borderRadius: '50%', border: '1px solid #F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div className="stat-icon-wrapper">
       {icon}
     </div>
   </div>
 );
 
 const Pagination = ({ totalPages, current, setPage }) => (
-  <div style={{ display: 'flex', justifyContent: 'center', padding: '20px 0', borderTop: '1px solid #E5E7EB' }}>
-    <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+  <div className="admin-pagination">
+    <div className="admin-pagination-controls">
       {[...Array(totalPages)].map((_, i) => (
         <span 
           key={i} 
           onClick={() => setPage(i + 1)} 
-          style={{ 
-            width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold',
-            backgroundColor: current === i + 1 ? '#6B7280' : 'transparent',
-            color: current === i + 1 ? '#fff' : '#6B7280',
-            transition: 'all 0.2s'
-          }}
+          className={`page-num ${current === i + 1 ? 'active' : ''}`}
         >
           {i + 1}
         </span>
@@ -515,7 +545,7 @@ const Pagination = ({ totalPages, current, setPage }) => (
       <button 
         disabled={current === totalPages || totalPages === 0} 
         onClick={() => setPage(p => p + 1)} 
-        style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#6B7280', opacity: (current === totalPages || totalPages === 0) ? 0.3 : 1 }}
+        className="page-next"
       >
         <ArrowRight size={18} />
       </button>

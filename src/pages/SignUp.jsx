@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import './Auth.css'
+import logo from '../assets/logo.svg';
 
 // ==========================================
 // REGISTRATION COMPONENT (SIGN UP)
@@ -31,7 +32,7 @@ export default function SignUp() {
   }
 
   return (
-    <div className="auth-container">
+    <div className="auth-container" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div className="auth-card">
         
         {/* ==========================================
@@ -40,7 +41,7 @@ export default function SignUp() {
         <div className="auth-form-section">
           <div className="brand-logo">
             {/* 🛠️ Configured to fetch from public folder utilizing Base URL structures */}
-            <img src={`${import.meta.env.BASE_URL}icons.svg`} alt="Logo" />
+            <img src={logo} alt="Logo" />
           </div>
 
           <h1 className="welcome-text">Create an account</h1>
@@ -95,34 +96,19 @@ export default function SignUp() {
               </span>
             </div>
 
-            {/* Account Role Privilege Selectors */}
-            <div className="role-container">
-              <span className="role-label">Role :</span>
-              <div className="role-options">
-                <label className="radio-label">
-                  <input 
-                    type="radio" 
-                    name="role" 
-                    value="Buyer" 
-                    checked={form.role === 'Buyer'} 
-                    onChange={e => setForm({...form, role: e.target.value})}
-                  /> 
-                  <span>Buyer</span>
-                </label>
-                <label className="radio-label">
-                  <input 
-                    type="radio" 
-                    name="role" 
-                    value="Supplier" 
-                    checked={form.role === 'Supplier'} 
-                    onChange={e => setForm({...form, role: e.target.value})}
-                  /> 
-                  <span>Supplier</span>
-                </label>
-              </div>
+            {/* Account Role Privilege Selectors - Modified to Checkboxes */}
+            <div className="role-container" style={{ display: 'flex', gap: '20px', margin: '15px 0' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                <input type="checkbox" checked={form.role === 'Buyer'} onChange={() => setForm({...form, role: 'Buyer'})} /> 
+                <span>Buyer</span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                <input type="checkbox" checked={form.role === 'Supplier'} onChange={() => setForm({...form, role: 'Supplier'})} /> 
+                <span>Supplier</span>
+              </label>
             </div>
 
-            {/* Legal terms Acceptance inputs */}
+            {/* Legal terms Acceptance inputs - Reverted to Original */}
             <div className="terms-container">
               <input 
                 type="checkbox" 
@@ -143,16 +129,16 @@ export default function SignUp() {
             <span>or continue with</span>
           </div>
 
-          {/* Federated Identity Provider anchors */}
-          <div className="social-login">
-            <button className="social-btn">
-              <img src="https://cdn-icons-png.flaticon.com/512/2991/2991148.png" alt="Google" className="social-icon-white" />
+          {/* Federated Identity Provider anchors - Colors adjusted */}
+          <div className="social-login" style={{ display: 'flex', justifyContent: 'center', gap: '15px', marginTop: '10px' }}>
+            <button className="social-btn" style={{ background: '#f5f5f5', border: '1px solid #ddd', borderRadius: '50%', padding: '10px', cursor: 'pointer' }}>
+              <img src="https://cdn-icons-png.flaticon.com/512/2991/2991148.png" alt="Google" style={{ width: '20px' }} />
             </button>
-            <button className="social-btn">
-              <img src="https://cdn-icons-png.flaticon.com/512/0/747.png" alt="Apple" className="social-icon-white" />
+            <button className="social-btn" style={{ background: '#f5f5f5', border: '1px solid #ddd', borderRadius: '50%', padding: '10px', cursor: 'pointer' }}>
+              <img src="https://cdn-icons-png.flaticon.com/512/0/747.png" alt="Apple" style={{ width: '20px' }} />
             </button>
-            <button className="social-btn">
-              <img src="https://cdn-icons-png.flaticon.com/512/124/124010.png" alt="Facebook" className="social-icon-white" />
+            <button className="social-btn" style={{ background: '#f5f5f5', border: '1px solid #ddd', borderRadius: '50%', padding: '10px', cursor: 'pointer' }}>
+              <img src="https://cdn-icons-png.flaticon.com/512/124/124010.png" alt="Facebook" style={{ width: '20px' }} />
             </button>
           </div>
 
@@ -176,7 +162,7 @@ export default function SignUp() {
       </div>
 
       {/* ==========================================
-          3. LEGAL MODAL COMPONENT WINDOW OVERLAY
+          3. LEGAL MODAL COMPONENT WINDOW OVERLAY - Reverted to Original
           ========================================== */}
       {showTerms && (
         <div className="modal-overlay">

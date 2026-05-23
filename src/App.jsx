@@ -120,7 +120,58 @@ export function useCart() {
 }
 
 // ==========================================
-// 3. MAIN APP ROOT COMPONENT WITH ROUTING
+// 3. ADMIN PROTECTED ROUTE COMPONENT
+// ==========================================
+function AdminProtectedRoute({ children }) {
+  const [password, setPassword] = useState('');
+  const [isAuthenticated, setIsAuthenticated] = useState(() => localStorage.getItem('admin_logged_in') === 'true');
+  const [error, setError] = useState('');
+
+  // لو مسجل دخول، اعرض الداشبورد على طول
+  if (isAuthenticated) {
+    return children;
+  }
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    
+    // 🔐 الباسورد بتاع الأدمن هنا (تقدر تغيره براحتك من هنا)
+    if (password === 'admin123') {
+      localStorage.setItem('admin_logged_in', 'true');
+      setIsAuthenticated(true);
+    } else {
+      setError('Invalid Password!');
+    }
+  };
+
+  // لو مش مسجل دخول، اعرض شاشة الباسورد
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#F4F4F5' }}>
+      <div style={{ backgroundColor: '#fff', padding: '40px', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', width: '350px', textAlign: 'center' }}>
+        <h2 style={{ color: '#111827', marginBottom: '10px', fontSize: '24px' }}>Admin Access</h2>
+        <p style={{ color: '#6B7280', fontSize: '14px', marginBottom: '25px' }}>Please enter the admin password</p>
+        
+        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+          <input 
+            type="password" 
+            value={password} 
+            onChange={(e) => { setPassword(e.target.value); setError(''); }} 
+            placeholder="Password..." 
+            style={{ padding: '12px', borderRadius: '8px', border: `1px solid ${error ? '#EF4444' : '#D1D5DB'}`, outline: 'none', width: '100%', boxSizing: 'border-box' }}
+            autoFocus
+          />
+          {error && <span style={{ color: '#EF4444', fontSize: '13px', fontWeight: 'bold' }}>{error}</span>}
+          <button type="submit" style={{ padding: '12px', backgroundColor: '#C24133', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', transition: 'background-color 0.2s' }}>
+            Login to Dashboard
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ==========================================
+// 4. MAIN APP ROOT COMPONENT WITH ROUTING
 // ==========================================
 function App() {
   const [isAuth, setIsAuth] = useState(() => {
@@ -159,9 +210,11 @@ function App() {
             <Route path="/signup" element={<SignUp />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
 
-            {/* 🛠️ تعديل الحماية المباشرة للوحات التحكم */}
-            <Route path="/admin" element={localStorage.getItem('isLoggedIn') === 'true' ? <AdminDashboard /> : <Navigate to="/login" replace />} />
-            <Route path="/supplier" element={localStorage.getItem('isLoggedIn') === 'true' ? <SupplierDashboard /> : <Navigate to="/login" replace />} />
+            {/* 🛠️ تم تغليف لوحة الأدمن بحارس الباسورد الجديد */}
+            <Route path="/admin" element={<AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute>} />
+            
+            {/* لوحة المورد لسه مفتوحة مؤقتاً للاختبار، لو عايز تقفلها ممكن نعملها حارس مشابه */}
+            <Route path="/supplier" element={<SupplierDashboard />} />
             
             <Route path="/*" element={
               <div className="app-layout">
@@ -174,7 +227,6 @@ function App() {
                     <Route path="/favorites" element={<Favorites />} />
                     <Route path="/cart" element={<Cart />} />
                     
-                    {/* 🛠️ تعديل الحماية المباشرة لصفحة الدفع */}
                     <Route 
                       path="/checkout" 
                       element={localStorage.getItem('isLoggedIn') === 'true' ? <Checkout /> : <Navigate to="/login" replace />} 

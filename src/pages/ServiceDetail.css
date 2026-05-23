@@ -16,15 +16,17 @@
   display: flex;
   flex-wrap: wrap; /* للسماح بنزول المحتوى في الشاشات الصغيرة */
   gap: 50px;
+  margin-top: -50px;
+  margin-left: -120px;
   margin-bottom: 50px;
   align-items: flex-start; /* لضبط المحاذاة من الأعلى */
 }
 
 /* Left Column: Image Area */
 .image-column {
+  /* margin-top: -50px; */
   flex: 1;
-  height: 736px;
-  width: 637px;
+ 
   padding-left: 100px;
   /* top: 191px; */
   /* margin-left: 130px; */
@@ -35,6 +37,8 @@
 .main-image-holder {
   /* top: 183px; */
   /* left: 80px; */
+   height: 636px;
+  width: 637px;
   position: relative;
   background: #f0f0f0;
   border-radius: 20px;
@@ -46,7 +50,7 @@
 
 .img-fluid { 
   width: 632px;
-  height: 742px;
+  height: 632px;
   object-fit: cover; /* لضمان ملء الصورة للحاوية بدون تمطيط */
   display: block; 
 }
@@ -78,7 +82,7 @@
   display: flex;
   flex-direction: column;
   justify-content: center; /* محاذاة عمودية في المنتصف */
-  padding: 130px 0; /* مسافات داخلية معقولة */
+  padding: 80px 0; /* مسافات داخلية معقولة */
 }
 
 .category-path { 
@@ -191,10 +195,12 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
-.btn-add-cart { 
+.btn-add-cart {
+  /* width: 101px; */
+  height: 62px; 
   background: #c24438; 
   color: white; 
-  flex: 2; 
+  flex: 0.3; 
   box-shadow: 0 4px 15px rgba(194, 68, 56, 0.3);
 }
 .btn-add-cart:hover { 
@@ -202,9 +208,10 @@
   transform: translateY(-2px); }
 
 .btn-rfq { 
+  height: 62px;
   background: #222; 
   color: white; 
-  flex: 1; 
+  flex: 0.3; 
 }
 .btn-rfq:hover { background: #000; transform: translateY(-2px); }
 
@@ -238,20 +245,22 @@
 .rating-tag { background: #fff8e1; color: #f57f17; padding: 5px 10px; border-radius: 15px; font-size: 13px; font-weight: bold; }
 
 .trust-badges-grid {
+  width: 1088.463134765625px;
+  margin: 0 auto;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 40px;
-  background: #fafafa;
+  padding: 20px;
+  /* background: #fafafa; */
   border-radius: 15px;
   margin-bottom: 60px;
   flex-wrap: wrap;
-  gap: 20px;
+  gap: 5px;
 }
 .badge-item { 
   text-align: center;
-  flex: 1;
-  min-width: 150px;
+  flex: 0.1;
+/* min-width: 58px; */
 }
 .badge-item span { font-size: 32px; display: block; margin-bottom: 10px; color: #c24438; }
 .badge-item p { font-size: 14px; font-weight: 600; color: #555; margin: 0; }
@@ -345,7 +354,11 @@
   margin-bottom: 8px; 
 }
 .review-top-line h5 { font-size: 18px; margin: 0; color: #333; }
-.mini-stars { font-size: 14px; }
+.mini-stars {
+  /* background: #ffcc00; */
+  color: #ffcc00;
+   font-size: 14px; 
+}
 .review-text { color: #555; line-height: 1.6; margin: 0; font-size: 15px; }
 
 .btn-more-red {

@@ -23,7 +23,7 @@
   .supplier-dashboard .sidebar {
     width: 389px;
     height: 1000px;
-    margin: 50px;
+    margin: 125px 50px 50px 50px;
     background-color: #202938;
     padding: 20px;
     border-top-left-radius: 30px;
@@ -34,10 +34,14 @@
   
   .supplier-dashboard .logo-section {
     display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 0 25px;
-    margin-bottom: 50px;
+    position: absolute;
+    top: 50px;
+    margin-left: 100px;
+
+    /* align-items: center; */
+    /* gap: 10px; */
+    /* padding: 0 25px; */
+    /* margin-bottom: 50px; */
   }
   
   .supplier-dashboard .logo-img {
@@ -53,6 +57,7 @@
   }
   
   .supplier-dashboard .nav-menu {
+    padding: 100px 0;
     display: flex;
     flex-direction: column;
   }
@@ -194,8 +199,8 @@
   }
   
   .supplier-dashboard .card-panel {
-    width: 713px;
-    height: 462px;
+    width: 875px;
+    height: 620px;
     background-color: #fff;
     border-radius: 16px;
     padding: 30px;

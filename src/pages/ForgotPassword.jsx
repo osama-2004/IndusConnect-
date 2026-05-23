@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import './Auth.css' 
@@ -6,13 +5,13 @@ import logoImg from '../assets/logo.svg'
 
 export function ForgotPassword() {
   const [step, setStep] = useState('email'); 
-  const [email, setEmail] = useState('nourhan19@gmail.com'); 
+  // 🛠️ تم مسح الإيميل الثابت من هنا عشان الخانة تبدأ فاضية
+  const [email, setEmail] = useState(''); 
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [timer, setTimer] = useState(59);
 
-  // States للتحكم في إظهار وإخفاء كلمات المرور
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 

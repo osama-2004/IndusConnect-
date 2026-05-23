@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import './Auth.css'
-
+import logo from '../assets/logo.svg';
 // ==========================================
 // AUTHENTICATION COMPONENT (LOGIN)
 // ==========================================
@@ -50,7 +50,7 @@ export default function Login() {
         <div className="auth-form-section">
           <div className="brand-logo">
               {/* Dynamic context injection deployment mapping for GitHub absolute path structures */}
-            <img src={`${import.meta.env.BASE_URL}icons.svg`} alt="Logo" />
+            <img src={logo} alt="Logo" />
           </div>
 
           <h1 className="welcome-text">Welcome back!</h1>
