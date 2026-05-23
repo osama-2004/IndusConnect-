@@ -181,6 +181,7 @@ export function ForgotPassword() {
                   required
                 />
           
+          
                 <span 
                   onClick={() => setShowPassword(!showPassword)} 
                   style={{ position: 'absolute', right: '15px', top: '38px', fontSize: '0.85rem', color: '#6b7280', cursor: 'pointer', fontWeight: '500', userSelect: 'none' }}
